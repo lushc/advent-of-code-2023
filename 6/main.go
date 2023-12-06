@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/lushc/advent-of-code-2023/util"
 )
@@ -26,20 +27,31 @@ func main() {
 		}
 	}
 
-	partOneWays := 1
-	for i, time := range times {
-		partOneWays *= calculateWays(util.ParseInt(time), util.ParseInt(distances[i]))
-	}
-	fmt.Printf("part 1: total ways to win is %d\n", partOneWays)
-
-	time := util.ParseInt(strings.Join(times, ""))
-	distance := util.ParseInt(strings.Join(distances, ""))
-	partTwoWays := calculateWays(time, distance)
-	fmt.Printf("part 2: total ways to win is %d\n", partTwoWays)
-
+	partOne(times, distances)
+	partTwo(times, distances)
 }
 
-func calculateWays(time, distance int) int {
+func partOne(times, distances []string) {
+	start := time.Now()
+	ways := 1
+	for i, time := range times {
+		ways *= searchWays(util.ParseInt(time), util.ParseInt(distances[i]))
+	}
+	elapsed := time.Since(start)
+	fmt.Printf("part 1: total ways to win is %d (took %s)\n", ways, elapsed)
+}
+
+func partTwo(times, distances []string) {
+	start := time.Now()
+	ways := searchWays(
+		util.ParseInt(strings.Join(times, "")),
+		util.ParseInt(strings.Join(distances, "")),
+	)
+	elapsed := time.Since(start)
+	fmt.Printf("part 2: total ways to win is %d (took %s)\n", ways, &elapsed)
+}
+
+func searchWays(time, distance int) int {
 	min := 0
 	for speed := 0; speed < time; speed++ {
 		dist := speed * (time - speed)
@@ -48,7 +60,6 @@ func calculateWays(time, distance int) int {
 			break
 		}
 	}
-	fmt.Printf("min speed for time %d is %d\n", time, min)
 
 	max := 0
 	for speed := time; speed > min; speed-- {
@@ -58,7 +69,6 @@ func calculateWays(time, distance int) int {
 			break
 		}
 	}
-	fmt.Printf("max speed for time %d is %d\n", time, max)
 
 	return max - min + 1
 }
