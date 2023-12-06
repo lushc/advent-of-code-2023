@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/lushc/advent-of-code-2023/util"
@@ -83,16 +84,29 @@ func main() {
 			lowestLocations[0] = next
 		}
 	}
-	// this is really really slow :')
-	for _, seedRange := range seedRanges {
-		for i := seedRange.start; i < seedRange.start+seedRange.length; i++ {
-			next := i
-			for _, m := range maps {
-				next = m.Lookup(next)
+
+	locations := []int{}
+	for _, entry := range maps[6].entries {
+		locations = append(locations, entry.destStart+(entry.length-1))
+	}
+	sort.Ints(locations)
+
+	// navigate the mapping backwards from an incrementing location until it produces a seed within our range
+	// this assumes the lowest location will be within the bounds of the largest humidity-to-location mapping
+	// otherwise, the upper bound would have to be largest possible seed
+	for i := 0; i < locations[len(locations)-1]; i++ {
+		prev := i
+		for j := len(maps) - 1; j >= 0; j-- {
+			prev = maps[j].ReverseLookup(prev)
+		}
+		for _, seedRange := range seedRanges {
+			if prev >= seedRange.start && prev <= seedRange.start+(seedRange.length-1) {
+				lowestLocations[1] = i
+				break
 			}
-			if lowestLocations[1] == -1 || next < lowestLocations[1] {
-				lowestLocations[1] = next
-			}
+		}
+		if lowestLocations[1] != -1 {
+			break
 		}
 	}
 
@@ -108,4 +122,14 @@ func (m Map) Lookup(src int) int {
 		}
 	}
 	return src
+}
+
+func (m Map) ReverseLookup(dest int) int {
+	for _, entry := range m.entries {
+		// destination must be in range to create a valid offset
+		if dest >= entry.destStart && dest <= entry.destStart+(entry.length-1) {
+			return entry.srcStart + (dest - entry.destStart)
+		}
+	}
+	return dest
 }
